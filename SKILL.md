@@ -1,5 +1,5 @@
 ---
-name: tech-visual-explainer
+name: gewu
 description: 从技术文章、文档、论文或一段描述中识别真正值得可视化的技术原理，提取可验证的解释模型（VEM），渲染成准确、克制的 SVG 原理解释图，并验证图文一致性。当用户说「给这段配个图」「画个解说图」「这段太难懂，做个可视化」「给文章配图」「这几个方案对比一下画出来」「解释一下这张图讲什么」时使用。只要任务是把技术概念/流程/结构/对比/因果变成图（而不是单纯写正文），就该用本 skill。它的产出是原理图而不是插画：重点是选对内容、讲清机制、避免画错。
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 ---
@@ -278,11 +278,11 @@ references/
 scripts/
     render.py                         CLI：渲染 + 校验 + 导出 PNG
     vis_check.py                      渲染后像素校验
-    tve/textmetrics.py                文字测量（内置宽度表，无依赖）
-    tve/tokens.py                     设计系统（改配色改这里）
-    tve/layout.py                     自动布局原语
-    tve/templates.py                  七种模板
-    tve/validate.py                   SVG 结构与几何校验
+    gewu/textmetrics.py               文字测量（内置宽度表，无依赖）
+    gewu/tokens.py                    设计系统（改配色改这里）
+    gewu/layout.py                    自动布局原语
+    gewu/templates.py                 七种模板
+    gewu/validate.py                  SVG 结构与几何校验
 templates/                            可复制的 VEM 示例
 tests/test_render.py                  回归测试
 evals/evals.json                      评测用例
@@ -290,12 +290,12 @@ evals/evals.json                      评测用例
 
 ## 迭代本 skill
 
-本目录是 skill 的**唯一事实源**，`~/.claude/skills/tech-visual-explainer` 是指向它的软链接。
+本目录是 skill 的**唯一事实源**，`~/.claude/skills/gewu` 是指向它的软链接。
 
 1. 在本目录改 `SKILL.md` / `references/` / `scripts/`
 2. 跑 `python3 tests/test_render.py`（改渲染器必跑）
 3. 跑 `evals/evals.json` 里的用例（隔离要求见该文件的 `eval_run_config`）
 4. 验证有效后提交
 
-**不要直接改 `~/.claude/skills/tech-visual-explainer/` 下的文件**——那是软链接，
+**不要直接改 `~/.claude/skills/gewu/` 下的文件**——那是软链接，
 改的是同一份文件，但会绕过这里的版本记录。

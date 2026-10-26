@@ -1,5 +1,5 @@
 {
-  "skill_name": "tech-visual-explainer",
+  "skill_name": "gewu",
   "version": "2.0",
   "eval_run_config": {
     "note": "eval-0 MUST run in a clean git worktree, not the live repo. Testing in the live repo let the baseline agent wander into a pre-existing orphan-page incident and burn its budget without writing the article.",

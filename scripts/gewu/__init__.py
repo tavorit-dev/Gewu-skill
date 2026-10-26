@@ -1,4 +1,4 @@
-"""tech-visual-explainer 的 SVG 渲染与校验工具包。
+"""格物 Gewu 的 SVG 渲染与校验工具包。
 
 模块划分：
     textmetrics  文字测量（内置字符宽度表，无外部依赖）

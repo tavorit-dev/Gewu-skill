@@ -1,4 +1,4 @@
-# 格物 Gewu · tech-visual-explainer
+# 格物 Gewu
 
 > **致知在格物，物格而后知至。**
 > ——《礼记·大学》
@@ -43,10 +43,10 @@ Stage 7  交付与迭代
 
 ## 安装
 
-本目录是唯一事实源，`~/.claude/skills/tech-visual-explainer` 是指向它的软链接：
+本目录是唯一事实源，`~/.claude/skills/gewu` 是指向它的软链接：
 
 ```bash
-ln -sfn ~/company/open-source/tech-visual-explainer ~/.claude/skills/tech-visual-explainer
+ln -sfn ~/company/open-source/Gewu-skill ~/.claude/skills/gewu
 ```
 
 ### 依赖
@@ -97,11 +97,11 @@ references/
 scripts/
     render.py                         CLI：渲染 + 校验 + 导出 PNG
     vis_check.py                      渲染后像素校验
-    tve/textmetrics.py                文字测量（内置宽度表，零依赖）
-    tve/tokens.py                     设计系统（改配色改这里）
-    tve/layout.py                     自动布局原语（节点尺寸/锚点/避让）
-    tve/templates.py                  七种图形模板
-    tve/validate.py                   SVG 结构与几何校验
+    gewu/textmetrics.py               文字测量（内置宽度表，零依赖）
+    gewu/tokens.py                    设计系统（改配色改这里）
+    gewu/layout.py                    自动布局原语（节点尺寸/锚点/避让）
+    gewu/templates.py                 七种图形模板
+    gewu/validate.py                  SVG 结构与几何校验
 templates/                            可复制的 VEM 示例
 tests/test_render.py                  回归测试
 evals/evals.json                      评测用例（含隔离要求）
@@ -128,7 +128,7 @@ evals/evals.json                      评测用例（含隔离要求）
 3. 跑 `evals/evals.json` 的用例——注意 eval-0 必须在干净 worktree 里跑
 4. 验证有效后提交
 
-**不要改 `~/.claude/skills/tech-visual-explainer/` 下的文件**：那是软链接，绕过版本记录。
+**不要改 `~/.claude/skills/gewu/` 下的文件**：那是软链接，绕过版本记录。
 
 ## 已知边界
 

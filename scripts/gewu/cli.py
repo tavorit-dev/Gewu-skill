@@ -19,7 +19,7 @@ from pathlib import Path
 # 允许 `python3 scripts/render.py` 直接跑（把 scripts/ 加进 sys.path）
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from tve import templates, validate  # noqa: E402
+from gewu import templates, validate  # noqa: E402
 
 
 def load_spec(path: Path) -> dict:

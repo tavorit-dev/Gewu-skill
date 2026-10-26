@@ -12,8 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
-from tve import textmetrics as tm, validate
-from tve.templates import TEMPLATES, render
+from gewu import textmetrics as tm, validate
+from gewu.templates import TEMPLATES, render
 
 FAILURES: list[str] = []
 PASSES = 0
