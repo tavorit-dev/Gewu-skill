@@ -1,0 +1,51 @@
+# 示例：Redis 缓存策略对比（PRD 十五节测试场景）
+# 演示 comparison 模板：同一行是同一维度，diff 只标真正有差异的维度
+
+title: 旁路缓存与写穿缓存的取舍
+subtitle: 缓存与数据库的一致性策略
+visual_type: comparison
+
+question: 更新数据时，该先动缓存还是先动数据库？
+core_message: >
+  两者都能用，差别在于「不一致窗口」出现在读路径还是写路径，
+  以及失败时谁来兜底。
+
+scope:
+  system: Redis + 关系型数据库
+
+options:
+  - id: o1
+    label: 旁路缓存
+    sub: Cache-Aside
+    role: primary
+  - id: o2
+    label: 写穿缓存
+    sub: Write-Through
+    role: accent
+
+dimensions:
+  - label: 写路径
+    values: ["先更新库，再删缓存", "先写缓存，缓存同步写库"]
+    diff: true
+  - label: 不一致窗口
+    values: ["删除失败时短暂不一致", "写缓存成功但写库失败时不一致"]
+    diff: true
+  - label: 读路径开销
+    values: ["未命中时回源并回填", "缓存始终有值，不回源"]
+  - label: 实现复杂度
+    values: ["低，只需处理删除", "高，需处理缓存与库的事务边界"]
+  - label: 适用场景
+    values: ["读多写少", "读写均衡且能接受写延迟"]
+
+verdict:
+  text: 选型依据不是「哪个更快」，而是「不一致窗口能否被业务接受、失败时如何补偿」。
+  role: primary
+
+evidence:
+  - source_ref: "原文 §缓存更新策略"
+    supports: "旁路缓存先更新数据库再删除缓存，避免写-写竞态"
+
+unknowns:
+  - "延迟双删的等待时长（原文未给出具体值）"
+
+boundary: 未覆盖多级缓存与缓存预热场景；图中数值为定性描述，非实测数据。

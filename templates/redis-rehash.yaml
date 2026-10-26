@@ -1,0 +1,66 @@
+# 示例：Redis 渐进式 Rehash（PRD 十五节的测试场景之一）
+# 演示 VEM 的完整写法：question / core_message / evidence / unknowns / boundary
+# 渲染：python3 scripts/render.py templates/redis-rehash.yaml -o /tmp/rehash.svg --check
+
+title: Redis 渐进式 Rehash：迁移工作如何被摊开
+subtitle: Redis 7.x · 字典扩容
+visual_type: flow
+
+question: 为什么扩容时不一次性把 ht[0] 全部搬到 ht[1]？
+core_message: >
+  把迁移摊到每次读写操作上，单次操作开销从 O(n) 降到 O(1)；
+  代价是迁移期间两表并存，查找要走两张表。
+
+scope:
+  system: Redis
+  version: "7.x"
+
+steps:
+  - id: s1
+    label: 触发扩容
+    sub: 负载因子超阈值
+    role: neutral
+  - id: s2
+    label: 分配 ht[1]
+    sub: 容量为 ht[0] 的 2 倍
+    role: neutral
+  - id: s3
+    label: rehashidx = 0
+    sub: 开始渐进迁移
+    role: primary
+  - id: s4
+    label: 每次读写搬一个桶
+    sub: 顺带推进 rehashidx
+    role: primary
+  - id: s5
+    label: 迁移完成
+    sub: 释放 ht[0]，ht[1] 转正
+    role: accent
+
+branches:
+  # 回环：迁移没完就继续被后续操作推进 —— 这是本图的核心机制，用实线
+  - from: s4
+    to: s3
+    label: 未搬完，循环推进
+    detour: below
+    role: primary
+  # 终止条件：确定发生，但它是条件分支而非主路径
+  - from: s4
+    to: s5
+    label: rehashidx == -1
+    role: line
+
+evidence:
+  - source_ref: "原文 §字典扩容机制"
+    supports: "迁移工作分散到多次操作中，而非一次性完成"
+  - source_ref: "原文 §渐进式 rehash"
+    supports: "rehashidx 记录迁移进度，完成后置为 -1"
+
+unknowns:
+  - "每次操作具体搬运多少个桶（随版本与配置变化）"
+  - "哪些命令会触发扩容（原文未列举）"
+
+conclusion: >
+  关键不是「分批」，而是迁移被绑定在正常操作路径上——
+  没有后台线程，也不会为迁移单独阻塞一次请求。
+boundary: 图中步数为示意值，不是某次真实压测的结果；实际触发条件随版本与配置变化。
