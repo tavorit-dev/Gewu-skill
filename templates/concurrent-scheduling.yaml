@@ -1,0 +1,74 @@
+# 示例：并发任务调度（PRD 十五节测试场景）
+# 演示 state 模板 + 「不要把可能发生的顺序画成必然顺序」这条硬约束
+
+title: 任务从提交到完成的调度过程
+subtitle: 工作队列 + 多工作协程
+visual_type: state
+
+question: 一个任务在队列与工作协程之间经历哪些状态？
+core_message: >
+  任务的状态迁移由队列和工作协程共同推进；
+  同一时刻多个任务处于不同状态，图描述的是单个任务的状态机，不是全局执行顺序。
+
+scope:
+  system: 通用任务队列
+
+states:
+  - id: st1
+    label: 已提交
+    sub: 进入队列尾部
+    initial: true
+  - id: st2
+    label: 排队中
+    sub: 等待空闲 worker
+  - id: st3
+    label: 执行中
+    sub: 被某个 worker 取出
+    role: primary
+  - id: st4
+    label: 失败待重试
+    sub: 未超最大重试次数
+    role: warn
+  - id: st5
+    label: 已完成
+    role: accent
+    final: true
+
+transitions:
+  - from: st1
+    to: st2
+    trigger: 入队成功
+  - from: st2
+    to: st3
+    trigger: worker 空闲并取出
+  - from: st3
+    to: st5
+    trigger: 执行成功
+  - from: st3
+    to: st4
+    trigger: 执行抛错
+  - from: st4
+    to: st2
+    trigger: 退避后重新入队
+    detour: below
+    role: warn
+  - from: st4
+    to: st5
+    trigger: 超过最大重试次数
+    style: weak
+    role: danger
+
+evidence:
+  - source_ref: "原文 §任务生命周期"
+    supports: "失败任务按退避策略重新入队，超过上限后标记为终止"
+
+unknowns:
+  - "退避的具体算法与最大重试次数的默认值"
+
+conclusion: >
+  重试不是回到「已提交」，而是回到「排队中」——
+  任务已经通过校验，只是执行失败。
+boundary: >
+  本图描述**单个任务**的状态机。多个任务并发时，不同任务处于不同状态，
+  图中箭头不表示任务之间的先后关系，也不表示某个迁移必然发生
+  （例如「执行抛错」只是可能路径之一）。

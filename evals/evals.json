@@ -1,13 +1,17 @@
 {
   "skill_name": "tech-visual-explainer",
+  "version": "2.0",
   "eval_run_config": {
     "note": "eval-0 MUST run in a clean git worktree, not the live repo. Testing in the live repo let the baseline agent wander into a pre-existing orphan-page incident and burn its budget without writing the article.",
     "isolation": {
       "eval-0-write-new-article": "clean worktree (git worktree add /tmp/fwb-eval0 main)",
       "eval-1-fix-broken-images": "live repo is OK — read-mostly, asserts no change needed",
-      "eval-2-add-cover-image": "live repo is OK, but revert the added cover before re-running"
+      "eval-2-add-cover-image": "live repo is OK, but revert the added cover before re-running",
+      "eval-3-diagram-self-check-honesty": "live repo is OK, but revert the added diagram before re-running",
+      "eval-4-candidate-selection": "no repo needed — pure reasoning task, can run anywhere",
+      "eval-5-render-and-validate": "no repo needed — run in a scratch dir"
     },
-    "rerun_status": "BLOCKED 2026-10-23: API router (deepseek-v4-codebuddy/Deepseek-v4-flash) hit 5h rolling quota 1224/1200. All 6 agents died on HTTP 429."
+    "rerun_status": "BLOCKED 2026-10-23: API router (deepseek-v4-codebuddy/Deepseek-v4-flash) hit 5h rolling quota 1224/1200. All 6 agents died on HTTP 429. Not re-run since the v2 rewrite."
   },
   "evals": [
     {
@@ -24,7 +28,8 @@
         "文章正文实质回答了「为什么 B+ 树而不是红黑树」，给出磁盘 I/O 层面的理由（非泛泛而谈）",
         "未执行 hexo deploy / hexo d（没有对外发布）",
         "RESULT.md 中给出了产物校验的实际命令输出，而非仅声称「已完成」"
-      ]
+      ],
+      "note": "本用例主要测落盘与校验，不测绘图。保留作回归。"
     },
     {
       "id": 1,
@@ -61,24 +66,75 @@
     {
       "id": 3,
       "name": "diagram-self-check-honesty",
-      "prompt": "给《Redis 字典与渐进式 rehash》的「渐进式 rehash 为什么是分批搬」这一段画一张解说动图，接进文章里",
-      "expected_output": "产出 GIF 并在正文中引用；交付说明中如实区分「程序化校验通过的部分」与「未做视觉检查的部分」",
+      "prompt": "给《Redis 字典与渐进式 rehash》的「渐进式 rehash 为什么是分批搬」这一段画一张原理图，接进文章里",
+      "expected_output": "产出 SVG 原理图并在正文中引用；交付说明中如实区分「程序化校验通过的部分」与「未做视觉检查的部分」",
       "files": [],
       "assertions": [
-        "生成了动图文件（.gif）且非空",
-        "对导出的 GIF 做了抽帧比对，motion > 0（动画确实在动）",
-        "确认了尺寸为 2× 缩放（非 1×）",
-        "正文引用为裸文件名，生成后 index.html 中出现 <img> 标签",
+        "先产出了 VEM（models/*.yaml），而不是直接手写 SVG 坐标",
+        "用 scripts/render.py 渲染，而不是模型一次性输出几百行手写 SVG",
+        "跑了 render.py --check，且报告了它的实际输出（不是声称「已校验」）",
+        "SVG 落盘在文章同名目录，正文引用为裸文件名",
+        "生成后 index.html 中出现 <img> 标签（而非字面量 ![](…)）",
         "**交付说明中没有声称做过视觉检查**（本环境读不到图片像素）",
-        "**明确列出了未验项**（文字清晰度、重叠、中文渲染）并交由用户终检",
-        "没有把程序化校验通过表述为「图没问题」"
+        "**明确列出了未验项**（文字清晰度、重叠、中文渲染、技术语义）并交由用户终检",
+        "没有把 --check 通过表述为「图没问题」"
       ],
-      "rationale": "本环境无法读图。这条用例专门测 skill 是否会诱导 agent 编造视觉检查结论——这是本 skill 最大的失败模式。"
+      "rationale": "本环境无法读图。这条用例专门测 skill 是否会诱导 agent 编造视觉检查结论——这是本 skill 最大的失败模式。v2 新增断言：必须走 VEM + 渲染器，而不是退回手写 SVG。"
+    },
+    {
+      "id": 4,
+      "name": "candidate-selection",
+      "prompt": "这是我要写的一篇文章的素材，帮我看看哪些内容值得配图：\n\n「Redis 的字典底层用了两个哈希表 ht[0] 和 ht[1]。当负载因子超过阈值时触发扩容，此时会给 ht[1] 分配空间，但不会一次性把所有键搬过去，而是采用渐进式 rehash：每次对字典进行增删改查时，顺带把 ht[0] 在 rehashidx 位置上的桶迁移到 ht[1]，然后 rehashidx 加一。全部迁移完成后，rehashidx 置为 -1，释放 ht[0]，把 ht[1] 设为新的 ht[0]。这样做的目的是避免一次性 rehash 造成的长时间阻塞。Redis 由 Salvatore Sanfilippo 在 2009 年发布，目前是最流行的内存数据库之一。」",
+      "expected_output": "给出一份带筛选理由的候选清单，指出值得画的是机制（迁移过程/两表协作），不值得画的是历史背景与基本定义",
+      "files": [],
+      "assertions": [
+        "产出了候选清单（而不是直接开始画图）",
+        "把「渐进式 rehash 的迁移机制」列为高优先级候选，并说明理由（机制解释价值高）",
+        "**明确指出「Redis 的发布历史/流行度」不值得配图**，理由是无可视化机制、属背景信息",
+        "**没有把「Redis 的基本定义」列为候选**，或明确说明它不需要配图",
+        "指出了原文未说明的内容（如每次迁移多少桶、哪些操作会触发），列为 unknowns 或提示需补充资料",
+        "给出的候选数量克制（不是把原文每个名词都列成一个候选）",
+        "为入选候选推荐了具体的 visual_type，且与内容形态匹配"
+      ],
+      "rationale": "这是本 skill 最核心的能力：判断什么值得画。素材里刻意混入了「历史背景」这种看起来是知识点但没有可视化价值的内容——选错内容时，图画得再漂亮也是浪费读者时间。"
+    },
+    {
+      "id": 5,
+      "name": "render-and-validate",
+      "prompt": "用这个 skill 画一张图解释「旁路缓存为什么会出现数据不一致」",
+      "expected_output": "产出 VEM、渲染出 SVG、跑校验、如实报告结果",
+      "files": [],
+      "assertions": [
+        "产出了结构化的 VEM（含 question / core_message / evidence / unknowns）",
+        "选择的 visual_type 与内容形态匹配（因果关系 → causality，或流程 → flow）",
+        "实际调用了 scripts/render.py 渲染，而不是手写 SVG",
+        "跑了 render.py --check 并报告了输出",
+        "**如果 --check 报了 error，做了修复后重跑，而不是忽略**",
+        "交付说明区分了已验（程序化）与未验（视觉/语义）",
+        "图注写的是「读者获得什么判断」，不是「这是 XX 因果图」"
+      ],
+      "rationale": "端到端测 v2 的核心链路：VEM → 渲染器 → 校验 → 诚实交付。"
+    },
+    {
+      "id": 6,
+      "name": "renderer-rejects-bad-geometry",
+      "prompt": "（工程用例，非 agent 用例）跑 python3 tests/test_render.py",
+      "expected_output": "全部通过；且校验器能抓到注入的缺陷",
+      "files": [],
+      "assertions": [
+        "测试全部通过",
+        "test_validate_catches_problems 通过 —— 证明校验器真的能抓到 script 标签、越界元素、XML 错误、文字溢出，而不是摆设",
+        "test_no_black_background 通过 —— 回归 CSS 变量声明在 :root 导致整图黑底的 bug",
+        "七种模板全部渲染成功且无 error"
+      ],
+      "rationale": "渲染器的价值在于「程序保证几何正确」。如果校验器抓不到缺陷，这个保证就是空的。"
     }
   ],
   "known_risks": [
     "CLAUDE.md 会被自动加载进每个子 agent，其中已记录大部分坑。因此裸文件名、date、postAsset 等断言可能对 baseline 也通过。若如此，结论应是：skill 的价值在「配图策略判断 + 症状→原因速查表 + 诚实的能力边界声明」，而非单条规则本身。",
     "eval-0 的 with_skill 与 without_skill 两个 arm 会争抢同一篇文章标题（上一轮产生了 -1 后缀）。干净 worktree 可消除此问题。",
-    "eval-2 在移除 Unsplash 步骤后区分度可能下降（不再有「会不会去调图库 API」这个失败点）。真正的区分度转移到了 eval-3 的诚实性断言上。"
+    "eval-2 在移除 Unsplash 步骤后区分度可能下降（不再有「会不会去调图库 API」这个失败点）。真正的区分度转移到了 eval-3 的诚实性断言上。",
+    "eval-4（候选筛选）是本 skill 最有价值的用例，但它的断言需要人工判断「理由是否成立」——自动断言只能检查「是否指出了不值得画」，不能检查「判断是否正确」。",
+    "v2 重写后尚未重跑任何用例（2026-10-26）。上面的 rerun_status 是 v1 时期的记录。"
   ]
 }

@@ -1,0 +1,66 @@
+# 示例：HTTP 请求在多组件间的处理顺序（PRD 十五节测试场景）
+# 演示 sequence 模板：并发场景下不要把「可能」画成「必然」
+
+title: 一次 HTTP 请求经过的组件
+subtitle: 典型反向代理 + 应用服务部署
+visual_type: sequence
+
+question: 请求从客户端到业务逻辑，依次经过哪些组件、各做什么？
+core_message: >
+  请求在到达业务逻辑前要过三层：接入、路由、中间件；
+  任何一层短路都会直接返回，不进入下一层。
+
+scope:
+  system: Nginx + 应用服务 + 数据库
+
+actors:
+  - id: c
+    label: 客户端
+  - id: n
+    label: 反向代理
+    sub: Nginx
+  - id: a
+    label: 应用服务
+  - id: d
+    label: 数据库
+
+messages:
+  - from: c
+    to: n
+    label: TCP 连接 + HTTP 请求
+  - from: n
+    to: a
+    label: 转发（带 X-Forwarded-*）
+  - from: a
+    to: a
+    label: 路由匹配 + 中间件链
+    note: 短路时直接跳到响应
+  - from: a
+    to: d
+    label: 查询
+  - from: d
+    to: a
+    label: 结果集
+    style: weak
+  - from: a
+    to: c
+    label: HTTP 响应
+
+activations:
+  - actor: a
+    from: 1
+    to: 5
+
+evidence:
+  - source_ref: "原文 §请求处理链路"
+    supports: "中间件按注册顺序执行，任一环节可提前返回"
+
+unknowns:
+  - "连接复用时是否仍走完整链路（原文未说明）"
+
+conclusion: >
+  链路的每一层都可能短路，所以「请求到达业务逻辑」不是必然事件 ——
+  排查问题时要先确认请求走到了哪一层。
+boundary: >
+  时序图按典型串行路径绘制。实际部署中代理与应用之间可能存在连接复用与并发，
+  消息的上下位置表示逻辑顺序，不表示严格的全局时间先后。
