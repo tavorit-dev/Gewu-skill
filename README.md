@@ -19,11 +19,29 @@
 ln -sfn ~/company/open-source/tech-visual-explainer ~/.claude/skills/tech-visual-explainer
 ```
 
-依赖：
+### 依赖
 
-- `animated-sketch-diagram` 插件（画解说图）
-- Hexo 8 环境（校验产物用），Node >= 20.19
-- `ffmpeg` + Python `PIL`/`numpy`（动图程序化校验）
+| 依赖 | 用途 | 缺失时 |
+|---|---|---|
+| **`animated-sketch-diagram` 插件** | 画手绘风解说图，**必需** | 只能写图注和引用，画不了图 |
+| `ffmpeg` + Python `PIL`/`numpy` | 动图程序化校验 | 跳过校验，但必须说明未验 |
+| Hexo 8 环境（Node >= 20.19） | 校验产物 | 无法验证图片是否真的解析 |
+| Node + `playwright-core` | 插件导出 GIF | 只能交付 HTML |
+
+装插件：
+
+```bash
+/plugin marketplace add OLDyade/animated-sketch-diagram
+/plugin install animated-sketch-diagram@animated-sketch-diagram
+```
+
+再单独装一次导出脚本的依赖（插件自带脚本但不含 `node_modules`）：
+
+```bash
+cd ~/.claude/plugins/marketplaces/animated-sketch-diagram/scripts && npm install
+```
+
+**本 skill 只引用插件，不复制其内容** —— 风格 token 与构图红线以插件自己的 `SKILL.md` 为准，插件升级时本 skill 无需改动。
 
 ## 结构
 

@@ -1,9 +1,48 @@
 ---
 name: tech-visual-explainer
 description: 把一段技术内容变成读者能看懂的视觉解释——选配图策略、写图注、画手绘风解说图，并把图接进博客文章里。当用户说「给这段配个图」「画个解说图」「这段太难懂，做个可视化」「给文章配图」「解释一下这张图讲什么」时使用。只要任务是把技术概念/流程/对比关系变成图（而不是单纯写正文），就该用本 skill。它记录的坑都是静默的：图生成成功但点不动、图片被当纯文本输出、配图 404，退出码全是 0。
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 ---
 
 # 技术内容视觉解释
+
+## 依赖（装到新机器时先看这里）
+
+| 依赖 | 用途 | 缺失时 |
+|---|---|---|
+| **`animated-sketch-diagram` 插件** | 画手绘风解说图，**必需** | 只能写图注和引用，画不了图 |
+| `ffmpeg` + Python `PIL`/`numpy` | 动图程序化校验（抽帧、比对） | 跳过校验，但**必须说明未验** |
+| Node + `playwright-core` | 插件导出 GIF 用 | 只能交付 HTML，导不出 GIF |
+
+**装插件：**
+
+```bash
+# 从 GitHub 装（插件的 origin 仓库）
+/plugin marketplace add OLDyade/animated-sketch-diagram
+/plugin install animated-sketch-diagram@animated-sketch-diagram
+```
+
+装完确认插件启用（在宿主的 `.claude/settings.local.json` 里）：
+
+```json
+{
+  "enabledPlugins": {
+    "animated-sketch-diagram@animated-sketch-diagram": true
+  }
+}
+```
+
+**GIF 导出的脚本依赖要单独装一次**（插件自带，但不含 `node_modules`）：
+
+```bash
+cd ~/.claude/plugins/marketplaces/animated-sketch-diagram/scripts && npm install
+```
+
+装好后 `render-gif.mjs` 会自动找本机 Chrome/Chromium，并调用 `ffmpeg` 合成。
+
+**注意**：本 skill 只**引用**该插件，不复制它的内容。插件的风格 token、构图红线以插件自己的 `SKILL.md` 与 `references/` 为准——它们升级时本 skill 无需改动。若插件不可用，明确告诉用户「画不了图」，不要用普通 SVG 凑数。
+
+---
 
 目标不是「画一张图」，而是**让读者看懂一段内容**。图是手段，理解是交付物。
 
@@ -39,7 +78,7 @@ description: 把一段技术内容变成读者能看懂的视觉解释——选�
 
 ## 第二步：画解说图
 
-用 `animated-sketch-diagram` 插件（手绘涂鸦风动画信息图，产出 SVG+CSS 动画，可导出 GIF）。**先把该插件的 SKILL.md 完整读一遍**，它的风格 token、构图红线、自检清单都以那里为准，本 skill 不重复。这里只补充技术博客场景下的取舍。
+用 `animated-sketch-diagram` 插件（手绘涂鸦风动画信息图，产出 SVG+CSS 动画，可导出 GIF）——依赖与安装见本文开头。**先把该插件的 SKILL.md 完整读一遍**，它的风格 token、构图红线、自检清单都以那里为准，本 skill 不重复。这里只补充技术博客场景下的取舍。
 
 ### 输入是段落，不是主题
 
